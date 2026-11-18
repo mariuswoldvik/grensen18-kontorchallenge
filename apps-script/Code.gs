@@ -1,7 +1,7 @@
-// Grensen 18 kontorchallenge – backend i Google Apps Script.
+// Grensen 18 kontorchallenge - backend i Google Apps Script.
 //
-// Scriptet distribueres som nettapp ("Utfør som: meg", "Tilgang: alle").
-// Det kjører med eierens tilgang til regnearket, så ingen nøkler trengs i koden.
+// Scriptet distribueres som nettapp ("Utfor som: meg", "Tilgang: alle").
+// Det kjorer med eierens tilgang til regnearket, sa ingen nokler trengs i koden.
 // SHEET_ID er ikke hemmelig: regnearket er bare tilgjengelig for de det er delt med.
 //
 // GET  ?action=state                       -> hele app-tilstanden
@@ -60,7 +60,7 @@ function handle_(fn) {
 // ---------- Lagring i regnearket ----------
 
 function spreadsheet_() {
-  // Bundet script bruker sitt eget regneark; frittstående script bruker SHEET_ID.
+  // Bundet script bruker sitt eget regneark; frittstaende script bruker SHEET_ID.
   return SpreadsheetApp.getActive() || SpreadsheetApp.openById(SHEET_ID);
 }
 
@@ -184,7 +184,7 @@ function addEntry_(body) {
     const sheet = sheet_(SHEETS.entries);
     const row = sheet.getLastRow() + 1;
     const range = sheet.getRange(row, 1, 1, 10);
-    // Tekstformat hindrer at Sheets gjør ID-er og tidsstempler om til tall/datoer.
+    // Tekstformat hindrer at Sheets gjor ID-er og tidsstempler om til tall/datoer.
     range.setNumberFormats([["@", "@", "@", "@", "@", "@", "0", "0", "@", "@"]]);
     range.setValues([
       [
@@ -272,7 +272,7 @@ function createSlug_(value) {
   return value
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 40);
@@ -351,7 +351,7 @@ function compareNames_(left, right) {
   return left.localeCompare(right, "nb");
 }
 
-// ---------- Poeng og oversikter (samme regler som før) ----------
+// ---------- Poeng og oversikter (samme regler som for) ----------
 
 function computeScoredEntries_(store) {
   const taskById = {};
@@ -561,7 +561,7 @@ function computeState_(store) {
       awardedPoints: entry.awardedPoints,
       createdAt: entry.createdAt,
       stamp: formatStamp_(entry.createdAt),
-      status: entry.wasCapped ? "Daglig tak nådd" : "+" + entry.awardedPoints + " poeng",
+      status: entry.wasCapped ? "Daglig tak n\u00e5dd" : "+" + entry.awardedPoints + " poeng",
     }));
 
   const leader = monthly[0];
@@ -582,10 +582,10 @@ function computeState_(store) {
       liveUpdateMode: "polling",
     },
     summary: {
-      leaderName: leader && leader.points > 0 ? leader.name : "Ingen har tatt ledelsen ennå",
+      leaderName: leader && leader.points > 0 ? leader.name : "Ingen har tatt ledelsen enn\u00e5",
       leaderPoints: leader ? leader.points : 0,
       teamLeaderName:
-        teamLeader && teamLeader.averagePoints > 0 ? teamLeader.name : "Ingen selskaper har tatt ledelsen ennå",
+        teamLeader && teamLeader.averagePoints > 0 ? teamLeader.name : "Ingen selskaper har tatt ledelsen enn\u00e5",
       teamLeaderPoints: teamLeader ? teamLeader.points : 0,
       totalPointsThisMonth: monthly.reduce((sum, row) => sum + row.points, 0),
       totalActionsToday: scoredEntries.filter((entry) => entry.dateKey === todayKey).length,
