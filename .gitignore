@@ -1,0 +1,10 @@
+node_modules/
+.vercel/
+.env
+.env.local
+.env.*.local
+# Nokkelfiler for Google-tjenestekontoer
+*service-account*.json
+*-credentials.json
+credentials.json
+.DS_Store

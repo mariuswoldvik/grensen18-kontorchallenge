@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="no">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1f78ff" />
+    <!-- pwa-head -->
+    <title>Grensen 18</title>
+    <link rel="icon" href="icons/office-challenge.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <div class="hero-heading">
+            <div>
+              <p class="eyebrow">Kontoret holder poeng</p>
+              <h1 id="office-name">Grensen 18</h1>
+            </div>
+            <img class="factory-logo" src="thefactory-logo.png" alt="TheFactory" />
+          </div>
+          <p class="hero-text">
+            Velg person, trykk på det som er gjort, og send inn. Leaderboardet
+            oppdateres live for alle som har siden åpen.
+          </p>
+          <button id="ios-install-trigger" class="ios-install-trigger" type="button">
+            Installer på iPhone/iPad
+          </button>
+        </div>
+      </header>
+
+      <main class="layout">
+        <div class="app-tabs" role="tablist" aria-label="Kontorchallenge">
+          <button
+            id="leaderboard-tab"
+            class="app-tab"
+            type="button"
+            role="tab"
+            aria-selected="true"
+            aria-controls="leaderboard-view"
+            data-tab="leaderboard"
+          >
+            Leaderboard
+          </button>
+          <button
+            id="registration-tab"
+            class="app-tab"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="registration-view"
+            data-tab="registration"
+            tabindex="-1"
+          >
+            Registrer aktivitet
+          </button>
+          <button
+            id="fines-tab"
+            class="app-tab"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="fines-view"
+            data-tab="fines"
+            tabindex="-1"
+          >
+            Oversikt bøter
+          </button>
+        </div>
+
+        <section
+          id="leaderboard-view"
+          class="app-view"
+          role="tabpanel"
+          aria-labelledby="leaderboard-tab"
+        >
+          <section class="prize-announcement" aria-label="Premieinformasjon">
+            <p class="eyebrow">Månedens premie</p>
+            <p>Vinneren annonseres ved slutten av måneden.</p>
+          </section>
+
+          <section class="summary-strip">
+            <article class="metric-card">
+              <p class="metric-label">Person som leder</p>
+              <strong id="leader-name">Ingen har tatt ledelsen ennå</strong>
+              <span id="leader-points">0 poeng</span>
+            </article>
+            <article class="metric-card team-leader-card">
+              <p class="metric-label">Selskap som leder på snitt</p>
+              <strong id="team-leader-name">Ingen selskaper har tatt ledelsen ennå</strong>
+              <span id="team-leader-points">0 poeng</span>
+            </article>
+            <article class="metric-card">
+              <p class="metric-label">Handlinger i dag</p>
+              <strong id="actions-today">0</strong>
+              <span>registreringer</span>
+            </article>
+            <article class="metric-card">
+              <p class="metric-label">Poeng denne måneden</p>
+              <strong id="points-month">0</strong>
+              <span>samlet innsats</span>
+            </article>
+          </section>
+
+          <section class="boards">
+            <article class="panel leaderboard-panel" data-board="individual">
+              <div class="panel-head">
+                <h2>Individuelt leaderboard</h2>
+                <p>Månedens oversikt med kun navn.</p>
+              </div>
+              <div id="individual-board" class="board-list"></div>
+            </article>
+
+            <article class="panel leaderboard-panel" data-board="team">
+              <div class="panel-head">
+                <h2>Teamleaderboard</h2>
+                <p>Rangert på gjennomsnittlig poeng per ansatt denne måneden.</p>
+              </div>
+              <div id="team-board" class="board-list"></div>
+            </article>
+          </section>
+
+          <section class="panel activity-panel">
+            <div class="panel-head">
+              <h2>Siste aktivitet</h2>
+              <p>Viser de nyeste innsendingene med poengstatus.</p>
+            </div>
+            <div id="recent-entries" class="recent-list"></div>
+          </section>
+        </section>
+
+        <section
+          id="registration-view"
+          class="app-view"
+          role="tabpanel"
+          aria-labelledby="registration-tab"
+          hidden
+        >
+          <section class="panel submit-panel registration-panel">
+            <div class="panel-head">
+              <h2>Registrer aktivitet</h2>
+              <p>Velg navn og oppgave, og send inn.</p>
+            </div>
+
+            <div class="registration-fields">
+              <label class="field">
+                <span>Navn</span>
+                <select id="person-select"></select>
+              </label>
+              <label class="field">
+                <span>Oppgave</span>
+                <select id="task-select"></select>
+              </label>
+            </div>
+
+            <div class="registration-actions">
+              <button id="submit-button" class="submit-button" disabled>
+                Send inn
+              </button>
+              <p id="status-message" class="status-message"></p>
+            </div>
+          </section>
+
+          <details class="admin-details">
+            <summary>Administrasjon</summary>
+            <section class="panel admin-panel">
+              <div class="panel-head">
+                <h2>Sett opp team og ansatte</h2>
+                <p>
+                  Skriv ett team og ett navn per linje, for eksempel
+                  Wise Marketing | Andreas.
+                </p>
+              </div>
+
+              <div class="admin-grid">
+                <label class="field">
+                  <span>Kontornavn</span>
+                  <input id="office-input" />
+                </label>
+                <div class="field prize-field">
+                  <span>Premie</span>
+                  <div class="prize-value">Husets vin</div>
+                </div>
+              </div>
+
+              <label class="field">
+                <span>Team og navn</span>
+                <textarea
+                  id="people-input"
+                  rows="7"
+                  placeholder="Wise Marketing | Andreas"
+                ></textarea>
+              </label>
+
+              <div class="admin-actions">
+                <button id="save-config-button" class="secondary-button">
+                  Lagre oppsett
+                </button>
+                <span id="config-status" class="status-message"></span>
+              </div>
+            </section>
+          </details>
+        </section>
+
+        <section
+          id="fines-view"
+          class="app-view"
+          role="tabpanel"
+          aria-labelledby="fines-tab"
+          hidden
+        >
+          <section class="fine-rule" aria-label="Regel for månedlig bot">
+            <p class="eyebrow">Månedlig bot</p>
+            <h2>Under 20 poeng gir 20 kr i bot</h2>
+            <p>Alle som har under 20 poeng får en månedlig bot på 20 kr.</p>
+          </section>
+
+          <section class="panel fine-overview-panel">
+            <div class="panel-head fine-overview-head">
+              <div>
+                <h2>Oversikt bøter</h2>
+                <p id="fine-month-label" class="fine-month-label"></p>
+              </div>
+              <label class="field fine-month-picker">
+                <span>Måned</span>
+                <select id="fine-month-select"></select>
+              </label>
+            </div>
+            <div id="fine-list" class="fine-list"></div>
+            <p class="fine-owner-note">Betalingsstatus registreres av eieren i chatten.</p>
+          </section>
+        </section>
+      </main>
+
+      <dialog
+        id="ios-install-dialog"
+        class="ios-install-dialog"
+        aria-labelledby="ios-install-title"
+      >
+        <section class="ios-install-card">
+          <button
+            id="ios-install-close"
+            class="ios-install-close"
+            type="button"
+            aria-label="Close installation guide"
+          >
+            &times;
+          </button>
+
+          <div class="ios-install-heading">
+            <img
+              class="ios-install-icon"
+              src="icons/office-challenge.svg"
+              alt=""
+            />
+            <div>
+              <p class="ios-install-label">Safari installation</p>
+              <h2 id="ios-install-title">Add Grensen 18 to your iPhone or iPad</h2>
+            </div>
+          </div>
+
+          <p class="ios-install-intro">
+            Keep this guide open and complete the steps using Safari's controls.
+          </p>
+
+          <ol class="ios-install-steps">
+            <li>
+              Tap the <strong>three-dot More button</strong> at the bottom-right in Safari
+              beside the address field, or tap the <strong>Share button</strong> below. If you
+              use Share, continue at step 3.
+            </li>
+            <li>Tap <strong>Share</strong>.</li>
+            <li>Tap <strong>Show More</strong> at the bottom-right.</li>
+            <li>Tap <strong>Add to Home Screen</strong>.</li>
+            <li>Tap <strong>Add</strong> at the top-right.</li>
+          </ol>
+
+          <p class="ios-install-confirmation">
+            The Grensen 18 icon appearing on your Home Screen confirms that installation
+            succeeded.
+          </p>
+        </section>
+      </dialog>
+    </div>
+
+    <script type="module" src="app.js"></script>
+  </body>
+  </html>
