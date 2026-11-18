@@ -1,18 +1,20 @@
-const CACHE_VERSION = "grensen-18-pwa-v8";
+const CACHE_VERSION = "grensen-18-pwa-v9";
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
+// Stier er relative til service workeren, så appen virker under
+// https://<bruker>.github.io/<repo>/.
 const APP_SHELL = [
-  "/pwa/",
-  "/pwa/index.html",
-  "/pwa/styles.css",
-  "/pwa/app.js",
-  "/pwa/manifest.webmanifest",
-  "/pwa/thefactory-logo.png",
-  "/pwa/icons/office-challenge.svg",
-  "/pwa/icons/office-challenge-192.png",
-  "/pwa/icons/office-challenge-512.png",
-  "/pwa/api/state",
-];
+  "./",
+  "index.html",
+  "styles.css",
+  "app.js",
+  "config.js",
+  "manifest.webmanifest",
+  "thefactory-logo.png",
+  "icons/office-challenge.svg",
+  "icons/office-challenge-192.png",
+  "icons/office-challenge-512.png",
+].map((path) => new URL(path, self.registration.scope).toString());
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -51,29 +53,18 @@ async function networkFirst(request) {
     if (cached) {
       return cached;
     }
-
     if (request.mode === "navigate") {
-      return caches.match("/pwa/");
+      return caches.match(self.registration.scope);
     }
-
     return new Response("Offline", { status: 503, statusText: "Offline" });
   }
 }
 
 self.addEventListener("fetch", (event) => {
   const { request } = event;
-  if (request.method !== "GET") {
+  // Bare appens egne filer caches. Kall til Apps Script går rett til nettet.
+  if (request.method !== "GET" || !request.url.startsWith(self.registration.scope)) {
     return;
   }
-
-  const url = new URL(request.url);
-  if (
-    url.origin !== self.location.origin ||
-    !url.pathname.startsWith("/pwa/") ||
-    url.pathname === "/pwa/api/events"
-  ) {
-    return;
-  }
-
   event.respondWith(networkFirst(request));
 });

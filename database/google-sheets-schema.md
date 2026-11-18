@@ -14,6 +14,6 @@ Appen leser og skriver kolonnene i denne rekkefølgen, så ikke flytt dem.
 - Poeng beregnes alltid på nytt fra `entries`. `person_name`, `task_label`,
   `task_points` og `awarded_points` er bare lesbare kopier.
 - Slett en feilregistrering ved å slette raden i `entries`.
-- Er `config`, `people` eller `tasks` tom, fyller appen dem fra `data/store.json`.
+- `config`, `people` og `tasks` må være fylt ut; appen leser dem direkte.
 - I `fine_payments` bør `id`, `month_key` og `created_at` være tekst
   (skriv `'2026-11` med apostrof hvis du legger inn manuelt).

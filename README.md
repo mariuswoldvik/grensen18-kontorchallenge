@@ -1,68 +1,50 @@
 # Grensen 18 kontorchallenge
 
 PWA som registrerer kontoroppgaver, viser individuelt leaderboard og
-teamleaderboard, og holder oversikt over månedsbøter. Data lagres i et
-Google-regneark.
+teamleaderboard, og holder oversikt over månedsbøter.
 
-## Dette ligger i pakken
+- **Nettside:** GitHub Pages, fra mappen `docs/`
+  → https://mariuswoldvik.github.io/grensen18-kontorchallenge/
+- **Database:** et Google-regneark (skjema i `database/google-sheets-schema.md`)
+- **Backend:** Google Apps Script (`apps-script/Code.gs`) distribuert som nettapp
 
-- `public/` - PWA-grensesnittet, JavaScript, CSS, manifest og ikoner.
-- `server.mjs` - Node-server og API for registreringer og leaderboard.
-- `lib/google-sheets-store.mjs` - lagring i Google Sheets (ingen eksterne avhengigheter).
-- `api/[...path].mjs` - Vercel-inngangspunktet.
-- `data/store.json` - startoppsett for personer, selskaper og oppgaver.
+Det finnes ingen hemmelige nøkler. Apps Script kjører med eierens tilgang til
+regnearket, og nettsiden snakker bare med Apps Script-adressen i `docs/config.js`.
+
+## Innhold
+
+- `docs/` - PWA-en: `index.html`, `app.js`, `config.js`, CSS, manifest, service worker og ikoner.
+- `apps-script/Code.gs` - API, poengberegning, leaderboard og bøter.
+- `apps-script/appsscript.json` - manifest for Apps Script-prosjektet.
 - `database/google-sheets-schema.md` - fanene og kolonnene regnearket må ha.
-- `vercel.json` - PWA-ruting for Vercel.
 
-## Miljøvariabler
+## Sett opp på nytt
 
-| Variabel | Innhold |
-|---|---|
-| `GOOGLE_SHEET_ID` | ID-en fra regnearkets URL (`/spreadsheets/d/<ID>/edit`) |
-| `GOOGLE_SERVICE_ACCOUNT_EMAIL` | `client_email` fra tjenestekontoens JSON-nøkkel |
-| `GOOGLE_PRIVATE_KEY` | `private_key` fra samme JSON-nøkkel (med `\n` for linjeskift) |
+1. **Regneark:** lag fanene i `database/google-sheets-schema.md` og fyll inn
+   `config`, `people` og `tasks`.
+2. **Apps Script:** gå til script.google.com, lag et nytt prosjekt og lim inn
+   `apps-script/Code.gs`. Sett `SHEET_ID` øverst til ID-en fra regnearkets URL.
+3. **Distribuer:** Implementer → Ny implementering → Nettapp, med
+   *Utfør som: meg* og *Hvem har tilgang: Alle*. Godkjenn tilgangen.
+4. **Koble til:** lim inn nettapp-URL-en (slutter på `/exec`) i `docs/config.js`.
+5. **GitHub Pages:** Settings → Pages → *Deploy from a branch*, `main`, mappe `/docs`.
 
-I stedet for de to siste kan `GOOGLE_SERVICE_ACCOUNT_JSON` inneholde hele
-JSON-nøkkelen, rå eller base64-kodet.
+Etter en endring i `Code.gs` må du lage en ny versjon: Implementer →
+Administrer implementeringer → rediger → *Ny versjon*. Da beholdes samme URL.
 
-Nøkkelen skal bare ligge i `.env` lokalt og i Vercel sine Environment Variables,
-aldri i `public/`, Git eller nettleserkode.
+## Daglig bruk
 
-## Sett opp Google Sheets
+- Endre deltakere og kontornavn i appen eller direkte i regnearket.
+- Feilregistreringer slettes ved å slette raden i `entries`.
+- Betalte bøter føres i `fine_payments`.
 
-1. Opprett et regneark med fanene i `database/google-sheets-schema.md`
-   (bare rad 1 med kolonnenavn trengs; appen fyller `config`, `people` og
-   `tasks` fra `data/store.json` hvis de er tomme).
-2. I Google Cloud Console: lag et prosjekt, slå på **Google Sheets API**, lag en
-   **tjenestekonto** og last ned en JSON-nøkkel for den.
-3. Del regnearket med tjenestekontoens e-post som **Redigerer**.
-4. Legg verdiene inn i `.env` (se `.env.example`).
+Alle som har adressen til appen kan registrere poeng og endre deltakerlisten,
+på samme måte som i foos-ligaen.
 
-## Start lokalt
+## Test lokalt
 
-Krever Node.js 22.9 eller nyere.
+Åpne `docs/` med en hvilken som helst statisk server, for eksempel:
 
 ```bash
-cp .env.example .env   # og fyll inn verdiene
-npm start
+python3 -m http.server --directory docs 8000
 ```
-
-Appen blir tilgjengelig på `http://localhost:3000/pwa/`.
-
-Uten miljøvariablene brukes `data/store.json` som lokal demo. Da blir dataene
-ikke delt eller lagret varig.
-
-## Tilpass utfordringen
-
-Rediger fanene `config`, `people` og `tasks` direkte i regnearket, eller bruk
-innstillingene i appen. Feilregistreringer slettes ved å slette raden i
-`entries`. Betalte bøter føres i `fine_payments`.
-
-## Publiser på Vercel
-
-1. Importer GitHub-repoet som et nytt Vercel-prosjekt.
-2. Legg `GOOGLE_SHEET_ID`, `GOOGLE_SERVICE_ACCOUNT_EMAIL` og
-   `GOOGLE_PRIVATE_KEY` inn under Settings → Environment Variables for
-   Production.
-3. Distribuer prosjektet.
-4. Del PWA-visningen på `/pwa/`.

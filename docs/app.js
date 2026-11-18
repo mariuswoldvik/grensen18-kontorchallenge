@@ -1,5 +1,28 @@
-const IS_PWA_VIEW = window.location.pathname === "/pwa" || window.location.pathname.startsWith("/pwa/");
-const APP_BASE_PATH = IS_PWA_VIEW ? "/pwa" : "";
+// Siden kjører som PWA på GitHub Pages. Data hentes fra Apps Script-nettappen
+// som er satt i config.js.
+const IS_PWA_VIEW = true;
+const API_URL = window.GRENSEN18_CONFIG?.apiUrl || "";
+const POLL_INTERVAL_MS = 15000;
+
+async function callApi(action, body) {
+  if (!API_URL) {
+    throw new Error("Mangler adressen til Apps Script i config.js");
+  }
+
+  // text/plain gjør forespørselen "enkel", slik at Apps Script godtar den uten CORS-preflight.
+  const response = body
+    ? await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action, ...body }),
+      })
+    : await fetch(`${API_URL}?action=${encodeURIComponent(action)}`);
+  const payload = await response.json();
+  if (!response.ok || payload.error) {
+    throw new Error(payload.error || "Noe gikk galt");
+  }
+  return payload;
+}
 
 const state = {
   activeTab: IS_PWA_VIEW ? "registration" : "leaderboard",
@@ -10,7 +33,6 @@ const state = {
   appState: null,
 };
 
-let eventSource;
 let pollingTimer;
 
 const elements = {
@@ -359,13 +381,7 @@ function render() {
 }
 
 async function fetchState() {
-  const response = await fetch(`${APP_BASE_PATH}/api/state`);
-  const nextState = await response.json();
-  if (!response.ok) {
-    throw new Error(nextState.error || "Kunne ikke laste oversikten");
-  }
-
-  setAppState(nextState);
+  setAppState(await callApi("state"));
 }
 
 async function submitEntry() {
@@ -378,23 +394,14 @@ async function submitEntry() {
   elements.submitButton.disabled = true;
   setStatus(elements.statusMessage, "Sender inn...", "neutral");
 
-  const response = await fetch(`${APP_BASE_PATH}/api/entries`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      personId: selectedPerson.id,
-      taskId: selectedTask.id,
-    }),
+  const payload = await callApi("entry", {
+    personId: selectedPerson.id,
+    taskId: selectedTask.id,
   });
-
-  const payload = await response.json();
-  if (!response.ok) {
-    throw new Error(payload.error || "Kunne ikke sende inn");
-  }
 
   state.selectedTaskId = "";
   setAppState(payload.state);
-  setStatus(elements.statusMessage, "Registrert. Leaderboardet er oppdatert live.", "success");
+  setStatus(elements.statusMessage, "Registrert. Leaderboardet er oppdatert.", "success");
 }
 
 async function saveConfig() {
@@ -416,49 +423,32 @@ async function saveConfig() {
 
   setStatus(elements.configStatus, "Lagrer oppsett...", "neutral");
 
-  const response = await fetch(`${APP_BASE_PATH}/api/config`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      officeName: elements.officeInput.value.trim(),
-      monthlyPrizeKr: state.config.monthlyPrizeKr,
-      people,
-    }),
+  const payload = await callApi("config", {
+    officeName: elements.officeInput.value.trim(),
+    monthlyPrizeKr: state.config.monthlyPrizeKr,
+    people,
   });
-
-  const payload = await response.json();
-  if (!response.ok) {
-    throw new Error(payload.error || "Kunne ikke lagre oppsett");
-  }
 
   setAppState(payload.state);
   setStatus(elements.configStatus, "Oppsett lagret.", "success");
 }
 
 function startLiveUpdates() {
-  if (state.appState?.meta?.liveUpdateMode !== "sse") {
-    if (!pollingTimer) {
-      pollingTimer = window.setInterval(() => {
-        if (document.visibilityState === "visible") {
-          fetchState().catch(() => undefined);
-        }
-      }, 10000);
+  if (pollingTimer) {
+    return;
+  }
+
+  pollingTimer = window.setInterval(() => {
+    if (document.visibilityState === "visible") {
+      fetchState().catch(() => undefined);
     }
-    return;
-  }
+  }, POLL_INTERVAL_MS);
 
-  if (eventSource) {
-    return;
-  }
-
-  eventSource = new EventSource(`${APP_BASE_PATH}/api/events`);
-  eventSource.addEventListener("state", (event) => {
-    const nextState = JSON.parse(event.data);
-    setAppState(nextState);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+      fetchState().catch(() => undefined);
+    }
   });
-  eventSource.onerror = () => {
-    setStatus(elements.statusMessage, "Live-oppdatering kobler til på nytt...", "neutral");
-  };
 }
 
 function registerServiceWorker() {
@@ -467,32 +457,7 @@ function registerServiceWorker() {
   }
 
   window.addEventListener("load", () => {
-    const appScope = `${window.location.origin}/pwa/`;
-    const legacyScope = `${window.location.origin}/`;
-
-    navigator.serviceWorker
-      .getRegistrations()
-      .then((registrations) => {
-        const legacyRegistration = registrations.find(
-          (registration) => registration.scope === legacyScope,
-        );
-        return legacyRegistration ? legacyRegistration.unregister() : undefined;
-      })
-      .then(() => {
-        if (!IS_PWA_VIEW) {
-          return undefined;
-        }
-
-        return navigator.serviceWorker.register("/pwa/service-worker.js", {
-          scope: "/pwa/",
-        });
-      })
-      .then((registration) => {
-        if (IS_PWA_VIEW && registration?.scope !== appScope) {
-          throw new Error("Unexpected service worker scope");
-        }
-      })
-      .catch(() => undefined);
+    navigator.serviceWorker.register("service-worker.js", { scope: "./" }).catch(() => undefined);
   });
 }
 
